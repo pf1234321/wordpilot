@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check 抑制规则.
+
+  仅抑制已确认误报 / 内部接受的风险，并写明理由；
+  生产环境发现的真实 CVE 不得在本文件里"消灭"，必须升级依赖或加防护.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+      示例：抑制 spring-security-crypto（如果引入）已知但内部接受的低危 CVE.
+      <suppress>
+        <notes>spring-security-crypto 仅用作 BCrypt 工具，未引入 SpringSecurity 鉴权链路</notes>
+        <cve>CVE-XXXX-XXXX</cve>
+      </suppress>
+    -->
+
+</suppressions>

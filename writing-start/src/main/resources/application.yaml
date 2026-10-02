@@ -1,0 +1,136 @@
+spring:
+  application:
+    name: wordpilot
+
+  profiles:
+    active: dev
+
+  # JDK 21 虚拟线程：适配 SSE 长连接高并发
+  threads:
+    virtual:
+      enabled: true
+
+  # ======================== 数据源 ========================
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:wordpilot}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  # ======================== JPA ========================
+  jpa:
+    hibernate:
+      # 开发环境自动建表；生产环境（profile=prod）设为 none，手动执行 SQL
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+
+  # ======================== Redis ========================
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 5s
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 2
+
+# ======================== Elasticsearch 7 ========================
+elasticsearch:
+  uris: ${ES_URIS:http://127.0.0.1:9200}
+  username: ${ES_USERNAME:}
+  password: ${ES_PASSWORD:}
+  index:
+    # ES 索引：dim=1024（bge-m3），检索 similarity=cosine
+    material_chunk: writing_material_chunk
+
+# ======================== HTTP Server ========================
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  # SSE 长连接需要更长超时
+  tomcat:
+    connection-timeout: 60s
+
+# ======================== 模型服务 ========================
+model:
+  llm:
+    provider: ${LLM_PROVIDER:dashscope}
+    api_key: ${DASHSCOPE_API_KEY:}
+    base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
+    model: ${LLM_MODEL:qwen-max}
+    timeout-seconds: 60
+  embedding:
+    provider: ${EMBEDDING_PROVIDER:bge}
+    model-path: ${BGE_MODEL_PATH:./models/bge-m3}
+    model: ${EMBEDDING_MODEL:bge-m3}
+    dim: 1024
+    load-on-start: ${BGE_LOAD_ON_START:true}
+
+# ======================== 记忆 ========================
+memory:
+  short-term:
+    # 短期记忆默认最近 10 轮；超长用 AutoContextMemory 压缩
+    max-rounds: 10
+  long-term:
+    # Agent 用 save_memory 工具回写，对话开始注入
+    enabled: true
+
+# ======================== 业务参数 ========================
+material:
+  chunk:
+    # 切片参数：长度 / 重叠，可调优
+    length: 500
+    overlap: 50
+  upload:
+    max-size-mb: 50
+    allowed-types: pdf,docx,txt,md
+
+# ======================== Actuator + Prometheus ========================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ======================== SpringDoc OpenAPI ========================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# ======================== 日志 ========================
+logging:
+  level:
+    root: INFO
+    com.scriptagent: DEBUG
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"

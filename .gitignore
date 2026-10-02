@@ -1,0 +1,62 @@
+# ============ Java / Maven ============
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*.log
+
+# Maven 本地仓库缓存
+.mvn/
+
+# ============ IntelliJ IDEA ============
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ============ Eclipse ============
+.classpath
+.project
+.settings/
+bin/
+
+# ============ VS Code ============
+.vscode/
+
+# ============ macOS ============
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============ Windows ============
+Thumbs.db
+ehthumbs.db
+
+# ============ Spring Boot ============
+HELP.md
+application-*.yaml.bak
+
+# ============ Agent / 模型 ============
+models/
+**/*.onnx
+**/bge-m3/
+bge-cache/
+
+# ============ Log / 临时 ============
+*.tmp
+*.bak
+*.swp
+logs/
+
+# ============ 安全扫描报告（提交时保留，发布时忽略） ============
+dependency-check-report.html
+dependency-check-report.xml
+dependency-check-report.json
+spotbugs-report.html
+spotbugsXml.xml
+pmd-report.html
+pmd-report.xml
+checkstyle-result.html

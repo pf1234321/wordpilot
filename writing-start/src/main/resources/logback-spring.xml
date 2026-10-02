@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2026 ScriptAgent. Licensed under Apache License 2.0.
+  -->
+
+<configuration>
+
+    <!-- 从 Spring 环境取 app.name 注入到日志 -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="wordpilot"/>
+    <springProperty scope="context" name="ACTIVE_PROFILE" source="spring.profiles.active" defaultValue="dev"/>
+
+    <!-- ============ 开发环境（profile=dev 或未指定）：彩色 console ============ -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS.SSS} %5p [${APP_NAME},%X{traceId:-}] [%logger{40}] : %m%n%wEx</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ============ 生产环境（profile=prod）：JSON 结构化日志 ============ -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app":"${APP_NAME}","profile":"${ACTIVE_PROFILE}"}</customFields>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
+        </encoder>
+    </appender>
+
+    <springProfile name="dev,test,default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.scriptagent" level="DEBUG"/>
+    </springProfile>
+
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="JSON"/>
+        </root>
+        <logger name="com.scriptagent" level="INFO"/>
+    </springProfile>
+
+</configuration>

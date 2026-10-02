@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.scriptagent</groupId>
+        <artifactId>wordpilot</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>writing-agent-core</artifactId>
+    <name>writing-agent-core</name>
+    <description>Agent 核心：Agent 工厂、三层记忆、ESRetrieveTool、Prompt 管理、SSE 流式</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-storage</artifactId>
+        </dependency>
+
+        <!--
+          AgentScope2.0：Agent 管理 / 工具调用 / 记忆管理抽象.
+          TODO: 等 AgentScope 正式发布到 Maven Central 后启用（当前 SNAPSHOT 不可达）.
+          <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-core</artifactId>
+            <version>${agentscope.version}</version>
+          </dependency>
+        -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

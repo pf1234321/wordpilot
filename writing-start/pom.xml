@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.scriptagent</groupId>
+        <artifactId>wordpilot</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>writing-start</artifactId>
+    <name>writing-start</name>
+    <description>启动聚合模块：主类、依赖聚合、fat JAR</description>
+
+    <dependencies>
+        <!-- 启动模块聚合所有业务模块，保证单一可执行入口 -->
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-business</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-agent-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-storage</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.scriptagent</groupId>
+            <artifactId>writing-common</artifactId>
+        </dependency>
+
+        <!-- Actuator + Prometheus 监控 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- 结构化日志：Logstash Encoder（prod 输出 JSON） -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+        </dependency>
+
+        <!-- 测试 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>wordpilot</finalName>
+        <plugins>
+            <!-- fat JAR 打包 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.scriptagent.writing.WritingApplication</mainClass>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

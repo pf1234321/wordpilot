@@ -1,0 +1,24 @@
+# EditorConfig: https://editorconfig.org
+# 与 Spotless google-java-format 保持一致；个别条目可在 IDE 里手动覆盖
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yaml,yml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{xml,html}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

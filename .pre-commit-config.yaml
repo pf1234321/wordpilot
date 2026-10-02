@@ -1,0 +1,50 @@
+# Pre-commit hooks for ScriptAgent.
+#
+# 本地提交前自动跑：
+#   1. mvn spotless:check —— 格式（Google Java Format）
+#   2. mvn checkstyle:check —— 兜底风格
+#   3. mvn spotbugs:check —— 静态扫描（fast 模式，跳过深度分析，秒级）
+#
+# OWASP Dependency-Check 与 P3C 全量跑由 CI 负责，本地只做轻量检查.
+#
+# 安装：
+#   pip install pre-commit
+#   pre-commit install
+#
+# 手动跑：
+#   pre-commit run --all-files
+#
+# 自动修复格式问题：
+#   mvn spotless:apply
+
+repos:
+  - repo: local
+    hooks:
+
+      - id: mvn-spotless-check
+        name: mvn spotless:check (Google Java Format)
+        entry: mvn -q -B -pl . spotless:check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: mvn-spotless-apply
+        name: mvn spotless:apply (auto-fix format)
+        entry: mvn -q -B -pl . spotless:apply
+        language: system
+        pass_filenames: false
+        stages: [manual]
+
+      - id: mvn-checkstyle-check
+        name: mvn checkstyle:check
+        entry: mvn -q -B -pl . checkstyle:check
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: mvn-spotbugs-check
+        name: mvn spotbugs:check (fast)
+        entry: mvn -q -B -pl . spotbugs:check -Dspotbugs.effort=Min
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

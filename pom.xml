@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.scriptagent</groupId>
+    <artifactId>wordpilot</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>wordpilot</name>
+    <description>ScriptAgent - 通用 AI 写作中台</description>
+
+    <modules>
+        <module>writing-common</module>
+        <module>writing-model</module>
+        <module>writing-storage</module>
+        <module>writing-agent-core</module>
+        <module>writing-business</module>
+        <module>writing-api</module>
+        <module>writing-start</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- 框架版本 -->
+        <spring-boot.version>3.3.5</spring-boot.version>
+
+        <!-- 工具库版本 -->
+        <logstash-logback.version>7.4</logstash-logback.version>
+        <springdoc-openapi.version>2.6.0</springdoc-openapi.version>
+        <spotless.version>2.43.0</spotless.version>
+        <google-java-format.version>1.25.2</google-java-format.version>
+        <p3c-pmd.version>1.3.0</p3c-pmd.version>
+        <spotbugs.version>4.8.6.4</spotbugs.version>
+        <findsecbugs.version>1.12.1</findsecbugs.version>
+        <owasp-dependency-check.version>9.0.9</owasp-dependency-check.version>
+        <maven-pmd-plugin.version>3.22.0</maven-pmd-plugin.version>
+        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+        <maven-spotbugs-plugin.version>4.8.6.4</maven-spotbugs-plugin.version>
+        <checkstyle-google.version>10.17.0</checkstyle-google.version>
+
+        <!-- 业务库版本 -->
+        <mysql-connector.version>8.4.0</mysql-connector.version>
+        <poi.version>5.3.0</poi.version>
+        <pdfbox.version>3.0.3</pdfbox.version>
+        <jbcrypt.version>0.4</jbcrypt.version>
+
+        <!-- AgentScope 占位：版本号以接入时实际发布的稳定版为准 -->
+        <agentscope.version>2.0.0-SNAPSHOT</agentscope.version>
+
+        <!-- ES 客户端版本 -->
+        <elasticsearch.client.version>7.17.17</elasticsearch.client.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 项目内部模块 -->
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-storage</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-agent-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-business</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.scriptagent</groupId>
+                <artifactId>writing-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- MySQL 驱动 -->
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql-connector.version}</version>
+            </dependency>
+
+            <!-- POI / PDFBox 文档解析 -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+
+            <!-- ES 7 Java 客户端（rest-high-level-client 与 7.x 服务端匹配） -->
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>${elasticsearch.client.version}</version>
+            </dependency>
+
+            <!-- SpringDoc OpenAPI（Swagger UI） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+
+            <!-- Logstash 结构化日志 -->
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash-logback.version}</version>
+            </dependency>
+
+            <!--
+              AgentScope 2.0 占位：发布到 Maven Central 后启用.
+              <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-core</artifactId>
+                <version>${agentscope.version}</version>
+              </dependency>
+            -->
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- 编译器：Java 21 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <release>21</release>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+
+                <!-- 资源：UTF-8 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <configuration>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+
+                <!-- ============ 格式层：Spotless + Google Java Format ============ -->
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <java>
+                            <googleJavaFormat>
+                                <version>${google-java-format.version}</version>
+                                <style>GOOGLE</style>
+                            </googleJavaFormat>
+                            <removeUnusedImports/>
+                            <importOrder>
+                                <order>,\#</order>
+                            </importOrder>
+                            <licenseHeader>
+                                <content>/* Copyright (c) 2026 ScriptAgent. Licensed under Apache License 2.0. */</content>
+                            </licenseHeader>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ============ 编码规约层：阿里 P3C（PMD） ============ -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${maven-pmd-plugin.version}</version>
+                    <configuration>
+                        <failOnViolation>true</failOnViolation>
+                        <failOnWarning>false</failOnWarning>
+                        <printFailingErrors>true</printFailingErrors>
+                        <rulesets>
+                            <ruleset>rulesets/java/ali-pmd.xml</ruleset>
+                            <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
+                            <ruleset>rulesets/java/ali-exception.xml</ruleset>
+                        </rulesets>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.alibaba.p3c</groupId>
+                            <artifactId>p3c-pmd</artifactId>
+                            <version>${p3c-pmd.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ============ Checkstyle 兜底 ============ -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
+                    <configuration>
+                        <configLocation>google_checks.xml</configLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <linkXRef>false</linkXRef>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle-google.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ============ SpotBugs + Find Security Bugs ============ -->
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${maven-spotbugs-plugin.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <failOnError>true</failOnError>
+                        <plugins>
+                            <plugin>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>${findsecbugs.version}</version>
+                            </plugin>
+                        </plugins>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- ============ OWASP Dependency-Check ============ -->
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${owasp-dependency-check.version}</version>
+                    <configuration>
+                        <failBuildOnCVSS>7</failBuildOnCVSS>
+                        <suppressionFiles>
+                            <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                        </suppressionFiles>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>verify</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

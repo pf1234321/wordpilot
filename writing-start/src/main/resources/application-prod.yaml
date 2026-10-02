@@ -1,0 +1,11 @@
+spring:
+  profiles:
+    active: prod
+
+  jpa:
+    hibernate:
+      # 生产环境关闭自动建表，手动执行 SQL
+      ddl-auto: none
+    show-sql: false
+
+# 生产：JSON / level root 日志保留在 logback-spring.xml 的 prod profile 节点
