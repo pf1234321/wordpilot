@@ -1,7 +1,9 @@
 /* Copyright (c) 2026 ScriptAgent. Licensed under Apache License 2.0. */
 package com.scriptagent.writing.storage.es;
 
+import com.scriptagent.writing.common.UserContext;
 import com.scriptagent.writing.common.constants.EsIndexConstants;
+import com.scriptagent.writing.storage.chunk.Chunk;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +93,78 @@ class MaterialChunkRepositoryTest {
     assertThat(afterX).hasSize(2).allMatch(c -> materialY == c.getMaterialId());
 
     repository.deleteByMaterialId(materialY);
+  }
+
+  @Test
+  @DisplayName("batchUpsert 批量写入含 user_id，可被该用户检索")
+  void batchUpsert_writesChunksWithUserId() throws Exception {
+    repository.ensureIndex();
+    try {
+      UserContext.set(9101L);
+      List<Chunk> chunks = List.of(new Chunk(95001L, 0, "up-0"), new Chunk(95001L, 1, "up-1"));
+      repository.batchUpsert(chunks, new float[][] {randomVector(), randomVector()});
+    } finally {
+      UserContext.clear();
+    }
+    refreshIndex();
+
+    List<String> hits = repository.search(9101L, randomVector(), 10);
+    assertThat(hits).hasSize(2).containsExactlyInAnyOrder("up-0", "up-1");
+
+    repository.deleteByMaterialId(95001L);
+    refreshIndex();
+  }
+
+  @Test
+  @DisplayName("检索强制 user_id：search(userB, vec, 5) 只应召回 userB 的素材")
+  void search_carriesUserId_returnsOnlyOwnChunks() throws Exception {
+    repository.ensureIndex();
+    try {
+      UserContext.set(9001L);
+      repository.batchUpsert(
+          List.of(new Chunk(93001L, 0, "userA素材-0"), new Chunk(93001L, 1, "userA素材-1")),
+          new float[][] {randomVector(), randomVector()});
+      UserContext.set(9002L);
+      repository.batchUpsert(
+          List.of(new Chunk(93002L, 0, "userB素材-0")), new float[][] {randomVector()});
+    } finally {
+      UserContext.clear();
+    }
+    refreshIndex();
+
+    // userB 检索只应命中 userB 的切片，userA 数据即使已写入也不泄漏
+    List<String> bHits = repository.search(9002L, randomVector(), 5);
+    assertThat(bHits).hasSize(1).allMatch(t -> t.startsWith("userB"));
+
+    repository.deleteByMaterialId(93001L);
+    repository.deleteByMaterialId(93002L);
+    refreshIndex();
+  }
+
+  @Test
+  @DisplayName("删除素材按 material_id 清干净：findByMaterialId 为空，不留孤儿向量")
+  void deleteMaterial_removesAllEsChunks() throws Exception {
+    repository.ensureIndex();
+    try {
+      UserContext.set(9100L);
+      repository.batchUpsert(
+          List.of(
+              new Chunk(94001L, 0, "x-0"),
+              new Chunk(94001L, 1, "x-1"),
+              new Chunk(94001L, 2, "x-2")),
+          new float[][] {randomVector(), randomVector(), randomVector()});
+    } finally {
+      UserContext.clear();
+    }
+    refreshIndex();
+
+    assertThat(repository.findByMaterialId(94001L)).hasSize(3);
+
+    repository.deleteByMaterialId(94001L);
+    refreshIndex();
+
+    // 不清理 → 孤儿向量残留，后续搜索串数据
+    assertThat(repository.findByMaterialId(94001L)).isEmpty();
   }
 
   private static float[] randomVector() {

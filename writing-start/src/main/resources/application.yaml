@@ -96,12 +96,14 @@ memory:
     # Agent 用 save_memory 工具回写，对话开始注入
     enabled: true
 
+# ======================== 素材 RAG（课件 §6：切片参数可配，调召回质量） ========================
+rag:
+  chunk:
+    size: 512
+    overlap: 50
+
 # ======================== 业务参数 ========================
 material:
-  chunk:
-    # 切片参数：长度 / 重叠，可调优
-    length: 500
-    overlap: 50
   upload:
     max-size-mb: 50
     allowed-types: pdf,docx,txt,md

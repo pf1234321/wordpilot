@@ -10,7 +10,19 @@ package com.scriptagent.writing.common.exception;
 public enum ErrorCode {
 
   /** 登录失败（账号不存在或密码错误统一返回，防账号枚举） */
-  LOGIN_FAILED(1001, "账号或密码错误");
+  LOGIN_FAILED(1001, "账号或密码错误"),
+
+  /** 不支持的文件格式（素材解析仅支持 docx/pdf/txt/md，课件主角一引用） */
+  UNSUPPORTED_FORMAT(1002, "不支持的文件格式"),
+
+  /** 文档解析失败（文件损坏或无法读取，不静默产出空文本） */
+  PARSE_FAILED(1003, "文档解析失败"),
+
+  /** 素材不存在（含越权访问——统一按不存在处理，防越权探测） */
+  MATERIAL_NOT_FOUND(1004, "素材不存在"),
+
+  /** 向量存储操作失败（ES 切片入库 / 清理失败，需整体回退不产生孤儿数据） */
+  ES_OPERATION_FAILED(1005, "向量存储操作失败");
 
   private final int code;
   private final String message;

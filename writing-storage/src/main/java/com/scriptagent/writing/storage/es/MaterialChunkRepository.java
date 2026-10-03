@@ -1,7 +1,9 @@
 /* Copyright (c) 2026 ScriptAgent. Licensed under Apache License 2.0. */
 package com.scriptagent.writing.storage.es;
 
+import com.scriptagent.writing.common.UserContext;
 import com.scriptagent.writing.common.constants.EsIndexConstants;
+import com.scriptagent.writing.storage.chunk.Chunk;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,9 +49,9 @@ public class MaterialChunkRepository {
   private static final String COSINE_PAINSCRIPT =
       "double dot=0.0; double nq=0.0; double ne=0.0;"
           + " for (int i=0; i<params.qv.length; i++) {"
-          + "   dot += params.qv[i] * doc['embedding'][i];"
+          + "   dot += params.qv[i] * doc['embedding'].vectorValue[i];"
           + "   nq  += params.qv[i] * params.qv[i];"
-          + "   ne  += doc['embedding'][i] * doc['embedding'][i];"
+          + "   ne  += doc['embedding'].vectorValue[i] * doc['embedding'].vectorValue[i];"
           + " }"
           + " if (nq == 0.0 || ne == 0.0) return 0.0;"
           + " return dot / Math.sqrt(nq * ne);";
@@ -137,6 +139,89 @@ public class MaterialChunkRepository {
       result.add(chunk);
     }
     return result;
+  }
+
+  /**
+   * 素材全链路入库入口：把切片 + 对应向量批量写入 ES（第 4 节 {@code MaterialService} 编排调用）.
+   *
+   * <p>userId 来源 {@link UserContext#require()}（H4 不变量①，禁止前端参数取）；doc id = {@code
+   * {materialId}_{chunkIndex}}； 复用 {@link #saveChunks} 的 bulk 写入路径，同一素材一次批量. 空切片直接返回，不产生空 bulk.
+   *
+   * @param chunks 切片列表（同一素材）
+   * @param vectors 与 {@code chunks} 一一对应的 1024 维向量
+   */
+  public void batchUpsert(List<Chunk> chunks, float[][] vectors) throws IOException {
+    if (chunks == null || chunks.isEmpty()) {
+      return;
+    }
+    if (vectors == null || vectors.length != chunks.size()) {
+      throw new IllegalArgumentException(
+          "vectors 数量("
+              + (vectors == null ? 0 : vectors.length)
+              + ") 必须与 chunks("
+              + chunks.size()
+              + ") 一致");
+    }
+    Long userId = UserContext.require();
+    List<MaterialChunk> docs = new ArrayList<>(chunks.size());
+    for (int i = 0; i < chunks.size(); i++) {
+      Chunk c = chunks.get(i);
+      MaterialChunk mc = new MaterialChunk();
+      mc.setMaterialId(c.getMaterialId());
+      mc.setChunkIndex(c.getChunkIndex());
+      mc.setChunkText(c.getChunkText());
+      mc.setEmbedding(vectors[i]);
+      docs.add(mc);
+    }
+    saveChunks(userId, chunks.get(0).getMaterialId(), docs);
+  }
+
+  /**
+   * 按 userId + 向量余弦相似度检索 TopK 切片文本（第 4 节 {@code MaterialService} / 第 5 节 ESRetrieveTool 用）.
+   *
+   * <p>返回切片原文列表；filter 强制 userId 防越权——只召回当前用户的素材片段（关键回归 {@code
+   * search_carriesUserId_returnsOnlyOwnChunks}）.
+   */
+  public List<String> search(Long userId, float[] queryVector, int topK) throws IOException {
+    List<MaterialChunk> hits = searchByUser(userId, queryVector, topK);
+    List<String> texts = new ArrayList<>(hits.size());
+    for (MaterialChunk hit : hits) {
+      texts.add(hit.getChunkText());
+    }
+    return texts;
+  }
+
+  /** 按 materialId 查询该素材下全部切片（删除后验证清空，杜绝孤儿数据；{@code MaterialService.delete} 配套）. */
+  public List<MaterialChunk> findByMaterialId(Long materialId) throws IOException {
+    SearchRequest request = new SearchRequest(INDEX_MATERIAL_CHUNK);
+    SearchSourceBuilder source = new SearchSourceBuilder();
+    source.query(QueryBuilders.termQuery("material_id", materialId));
+    source.size(10000);
+    request.source(source);
+    SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+    List<MaterialChunk> result = new ArrayList<>();
+    for (SearchHit hit : response.getHits().getHits()) {
+      result.add(fromHit(hit));
+    }
+    return result;
+  }
+
+  /** SearchHit → MaterialChunk（仅供新方法 {@link #findByMaterialId} 使用；既有方法保持原样不动）. */
+  private static MaterialChunk fromHit(SearchHit hit) {
+    MaterialChunk chunk = new MaterialChunk();
+    chunk.setId(hit.getId());
+    Map<String, Object> src = hit.getSourceAsMap();
+    if (src.get("material_id") instanceof Number n) {
+      chunk.setMaterialId(n.longValue());
+    }
+    if (src.get("user_id") instanceof Number n) {
+      chunk.setUserId(n.longValue());
+    }
+    if (src.get("chunk_index") instanceof Number n) {
+      chunk.setChunkIndex(n.intValue());
+    }
+    chunk.setChunkText((String) src.get("chunk_text"));
+    return chunk;
   }
 
   /** 按 materialId 删除该素材下全部切片（与 MySQL 逻辑删除同步）. */

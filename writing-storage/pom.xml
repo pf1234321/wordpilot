@@ -15,6 +15,11 @@
     <name>writing-storage</name>
     <description>存储层：JPA Entity/Repository、Redis、ES、文档解析、切片</description>
 
+    <properties>
+        <!-- surefire excludedGroups：默认 integration（CI 跳过 @Tag("integration")）；本地 -Dsurefire.excludedGroups= 放开跑 integration -->
+        <surefire.excludedGroups>integration</surefire.excludedGroups>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.scriptagent</groupId>
@@ -105,7 +110,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <excludedGroups>integration</excludedGroups>
+                    <excludedGroups>${surefire.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
         </plugins>
