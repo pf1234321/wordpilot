@@ -58,6 +58,8 @@ elasticsearch:
   index:
     # ES 索引：dim=1024（bge-m3），检索 similarity=cosine
     material_chunk: writing_material_chunk
+    # 模板库索引（结构资产，第 6 节模板引擎，非向量索引）
+    template: writing_template
 
 # ======================== HTTP Server ========================
 server:

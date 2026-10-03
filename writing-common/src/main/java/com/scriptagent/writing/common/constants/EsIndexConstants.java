@@ -12,6 +12,9 @@ public final class EsIndexConstants {
   /** 素材切片索引（默认在 application.yaml 配置） */
   public static final String INDEX_MATERIAL_CHUNK = "writing_material_chunk";
 
+  /** 模板库索引（结构资产，第 6 节模板引擎；非向量索引，无 dim/cosine） */
+  public static final String INDEX_TEMPLATE = "writing_template";
+
   /** embedding 维度（bge-m3 = 1024） */
   public static final int EMBEDDING_DIM = 1024;
 

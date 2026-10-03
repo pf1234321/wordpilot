@@ -22,7 +22,10 @@ public enum ErrorCode {
   MATERIAL_NOT_FOUND(1004, "素材不存在"),
 
   /** 向量存储操作失败（ES 切片入库 / 清理失败，需整体回退不产生孤儿数据） */
-  ES_OPERATION_FAILED(1005, "向量存储操作失败");
+  ES_OPERATION_FAILED(1005, "向量存储操作失败"),
+
+  /** 模板渲染缺少必填参数（variables 中 required=true 的 key 未提交，防生成残缺稿，课件点名） */
+  MISSING_REQUIRED_PARAM(1006, "缺少必填参数");
 
   private final int code;
   private final String message;
