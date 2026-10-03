@@ -72,6 +72,25 @@
 3. **删除无残留**：删除素材后，ES 该 material_id 无残留（`findByMaterialId` 为空，仓库层 integration 已自动化验证，人工端到端复核一遍）。
 4. **损坏 PDF**：传一份损坏 PDF → 明确报 `PARSE_FAILED`，不落半截数据（单测已覆盖，人工端到端复核）。
 
+## 补充证据：真实素材端到端功能测试（MaterialServiceFunctionalIT）
+
+新增 `writing-start/src/test/java/com/scriptagent/writing/MaterialServiceFunctionalIT.java`（`@SpringBootTest` + `@Tag("integration")`，本地 MySQL/ES/BGE 中间件），用 `docs/测试素材/` 下 **4 个真实文档**跑完整 RAG 链路，实测 **1/1 通过**：
+
+```
+upload 素材3_AI写作七条方法.txt           → materialId=6  | 原文长度=568 | 切片数=2
+upload 素材4_写作引擎技术笔记.md          → materialId=7  | 原文长度=1912 | 切片数=5
+upload 素材1_新能源汽车智能诊断系统_方案.docx → materialId=8  | 原文长度=967 | 切片数=2
+upload 素材2_新能源汽车故障诊断_白皮书.pdf  → materialId=9  | 原文长度=647 | 切片数=2
+search 查询='AI 写作引擎从 0 到 1：原理与工程实践' 召回 3 片：
+   召回片段: # AI 写作引擎从 0 到 1：原理与工程实践   ← Top1 命中素材4（最相关）
+   召回片段: AI 写作的七条实战方法（…）              ← 同为"AI 写作"主题（素材3）
+delete 全部素材 4 份，ES 无残留、MySQL 逻辑删除均通过
+```
+
+**验证结论**：四种格式真实文档均完成「upload → MySQL 主记录 + ES 切片 → 同模型向量化检索召回 → delete 清理无残留」全链路；检索 Top1 正确命中查询主题对应素材（相关性成立）。**此前列在人工项的"真实 docx 上传→ES 可检索"与"删除无残留"两项，已由本测试自动化覆盖**；剩余人工项仅为"双用户隔离"与"损坏 PDF 明确报错"的端到端复核。
+
+配套改动：`writing-start/pom.xml` 增加与 writing-storage 一致的 `<surefire.excludedGroups>integration</surefire.excludedGroups>` 属性化配置，使该依赖真实中间件的功能测试默认被 CI 排除（`mvn clean verify` 不依赖中间件，8 模块全绿）。
+
 ## 结论
 
 六项证据 DoD 全部满足：全量 `mvn clean verify` 全绿（含真实 BGE 推理 + 全部静态门禁）、harness 四测试类存在且关键回归（`deleteMaterial_removesAllEsChunks` 双保险、`search_carriesUserId_returnsOnlyOwnChunks`）逐个对号、本节交付物逐项存在、前序节回归绿、H4 不变量①③④⑥相关项通过、剩余人工项清单已列明。**第 4 节素材 RAG 管线验收通过。**

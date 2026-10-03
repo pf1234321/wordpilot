@@ -15,6 +15,11 @@
     <name>writing-start</name>
     <description>启动聚合模块：主类、依赖聚合、fat JAR</description>
 
+    <properties>
+        <!-- surefire excludedGroups：默认 integration（CI 跳过 @Tag("integration")，如依赖真实中间件的 MaterialServiceFunctionalIT）；本地 -Dsurefire.excludedGroups= 放开跑 -->
+        <surefire.excludedGroups>integration</surefire.excludedGroups>
+    </properties>
+
     <dependencies>
         <!-- 启动模块聚合所有业务模块，保证单一可执行入口 -->
         <dependency>
@@ -91,6 +96,13 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${surefire.excludedGroups}</excludedGroups>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
