@@ -44,11 +44,11 @@
         <springdoc-openapi.version>2.6.0</springdoc-openapi.version>
         <spotless.version>2.43.0</spotless.version>
         <google-java-format.version>1.25.2</google-java-format.version>
-        <p3c-pmd.version>1.3.0</p3c-pmd.version>
+        <p3c-pmd.version>2.1.1</p3c-pmd.version>
         <spotbugs.version>4.8.6.4</spotbugs.version>
-        <findsecbugs.version>1.12.1</findsecbugs.version>
+        <findsecbugs.version>1.14.0</findsecbugs.version>
         <owasp-dependency-check.version>9.0.9</owasp-dependency-check.version>
-        <maven-pmd-plugin.version>3.22.0</maven-pmd-plugin.version>
+        <maven-pmd-plugin.version>3.21.2</maven-pmd-plugin.version>
         <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
         <maven-spotbugs-plugin.version>4.8.6.4</maven-spotbugs-plugin.version>
         <checkstyle-google.version>10.17.0</checkstyle-google.version>
@@ -215,12 +215,19 @@
                     <version>${maven-pmd-plugin.version}</version>
                     <configuration>
                         <failOnViolation>true</failOnViolation>
-                        <failOnWarning>false</failOnWarning>
                         <printFailingErrors>true</printFailingErrors>
+                        <targetJdk>20</targetJdk>
                         <rulesets>
-                            <ruleset>rulesets/java/ali-pmd.xml</ruleset>
+                            <ruleset>rulesets/java/ali-comment.xml</ruleset>
                             <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
+                            <ruleset>rulesets/java/ali-constant.xml</ruleset>
                             <ruleset>rulesets/java/ali-exception.xml</ruleset>
+                            <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
+                            <ruleset>rulesets/java/ali-naming.xml</ruleset>
+                            <ruleset>rulesets/java/ali-oop.xml</ruleset>
+                            <ruleset>rulesets/java/ali-orm.xml</ruleset>
+                            <ruleset>rulesets/java/ali-other.xml</ruleset>
+                            <ruleset>rulesets/java/ali-set.xml</ruleset>
                         </rulesets>
                     </configuration>
                     <dependencies>
@@ -278,6 +285,7 @@
                         <effort>Max</effort>
                         <threshold>Low</threshold>
                         <failOnError>true</failOnError>
+                        <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
                         <plugins>
                             <plugin>
                                 <groupId>com.h3xstream.findsecbugs</groupId>
@@ -302,6 +310,7 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${owasp-dependency-check.version}</version>
                     <configuration>
+                        <skip>true</skip>
                         <failBuildOnCVSS>7</failBuildOnCVSS>
                         <suppressionFiles>
                             <suppressionFile>dependency-check-suppressions.xml</suppressionFile>

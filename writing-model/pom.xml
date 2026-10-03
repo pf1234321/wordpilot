@@ -33,6 +33,28 @@
             <artifactId>onnxruntime</artifactId>
             <version>1.19.2</version>
         </dependency>
+
+        <!-- DJL HuggingFace tokenizer（BGE bge-m3 向量化的 tokenizer，读 tokenizer.json 做 SentencePiece 分词） -->
+        <dependency>
+            <groupId>ai.djl.huggingface</groupId>
+            <artifactId>tokenizers</artifactId>
+            <version>0.38.0</version>
+        </dependency>
+
+        <!-- SpotBugs 注解（@SuppressFBWarnings 编译期定点抑制误报，provided 不随包发布） -->
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.8.6</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Spring Boot 测试套件：JUnit 5 / AssertJ / Mockito / Spring Test（MockRestServiceServer） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
