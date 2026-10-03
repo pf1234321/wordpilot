@@ -20,10 +20,10 @@ import org.springframework.web.client.RestClientResponseException;
  * {@link ModelService} 门面到此. API key 经 {@link ModelProperties} 的 {@code ${DASHSCOPE_API_KEY}}
  * 注入，不落明文（H4 不变量③）. 错误抛 {@link LlmException}，携带模型名 / 状态码，不吞错.
  *
- * <p>端点与报文格式经真实 DashScope 调用实测（2026-10-03）：OpenAI 兼容端点
- * {@code /compatible-mode/v1/chat/completions} 返回顶层 {@code choices[0].message.content}，请求体顶层
- * {@code model/messages}；原生端点 {@code /api/v1/services/aigc/text-generation/generation} 实测返回
- * {@code output.text} 纯文本（无 choices 字段），与代码解析结构不匹配，故不采用原生端点.
+ * <p>端点与报文格式经真实 DashScope 调用实测（2026-10-03）：OpenAI 兼容端点 {@code /compatible-mode/v1/chat/completions}
+ * 返回顶层 {@code choices[0].message.content}，请求体顶层 {@code model/messages}；原生端点 {@code
+ * /api/v1/services/aigc/text-generation/generation} 实测返回 {@code output.text} 纯文本（无 choices
+ * 字段），与代码解析结构不匹配，故不采用原生端点.
  */
 @Component
 public class LlmClient {

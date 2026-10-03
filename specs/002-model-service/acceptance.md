@@ -92,13 +92,15 @@ writing-model 测试类（`src/test/java/com/scriptagent/writing/model/`）：
 
 
 
-1. **真实 LLM 冒烟**：设 `DASHSCOPE_API_KEY` 后调用 `LlmClient`/`ModelService.chat` 走通一次真实 Qwen（本环境未设 key，CI 跳过）。验证 key 非明文、错误信息不含 key。
+1. **真实 LLM 冒烟**：✅ **已实测完成（2026-10-03，用户提供真实 key，仅经环境变量、未落盘）**——DashScope `qwen-max` 真实调用成功（OpenAI 兼容端点 `/compatible-mode/v1/chat/completions` 返回 `choices[0].message.content`）。**同时发现并修复一个真实 bug**：`LlmClient` 原用原生端点 `/api/v1/services/aigc/text-generation/generation`，实测该端点返回 `output.text` 纯文本（无 choices 字段），与代码解析结构不匹配（会抛"返回空结果"）；已改为 OpenAI 兼容端点 + 顶层 choices 报文格式（与实测通过的格式完全一致），单测 3/3 + 全量 verify 全绿。课件/方案未指定端点路径（仅说"RestClient 封装 DashScope HTTP 接口"），不违反课件。
 
 2. **真实 Embedding 集成**：`BGE_MODEL_PATH=/Users/Administrator/bge-m3 mvn -pl writing-model -am test -Dtest=EmbeddingClientRealInference -Dsurefire.failIfNoSpecifiedTests=false` —— 已在本机单跑 14.59s 通过（真实 bge-m3 ONNX：1024 维、归一化、同文本稳定），无需再跑。
 
-3. **真实 Redis/ES 集成**：本地 docker 端口 6379/9200 在监听，可跑第 1 节 integration（`writing-storage` excludedGroups=integration 本地放开）。
+3. **真实 Redis/ES 集成**：✅ 端口 6379/9200 实测 OPEN（docker es7/redis4 在跑），第 1 节 integration 可本地放开。
 
-4. 依赖方向确认：`writing-agent-core`（第 5 节）届时不得直接依赖大模型 SDK，须经 `writing-model`（决策九 / 宪法三）—— 可通过 `grep -r "dashscope\|onnxruntime" writing-agent-core` 复核。
+4. **真实 MySQL**：✅ root 登录 `mysql8` 容器（127.0.0.1:3309→3306，8.0.44）成功，`wordpilot` 库存在，第 1 节 4 张表（sys_user / writing_article / writing_material / writing_memory）齐全。
+
+5. 依赖方向确认：`writing-agent-core`（第 5 节）届时不得直接依赖大模型 SDK，须经 `writing-model`（决策九 / 宪法三）—— 可通过 `grep -r "dashscope\|onnxruntime" writing-agent-core` 复核。
 
 ## 结论
 
