@@ -12,9 +12,10 @@ spring:
 
   # ======================== 数据源 ========================
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:wordpilot}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:}
+    url: jdbc:mysql://127.0.0.1:3309/wordpilot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    # 数据库密码走环境变量（H4 全局不变量③），禁止明文入版本库；启动期缺则报错
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
@@ -38,10 +39,10 @@ spring:
   # ======================== Redis ========================
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DB:0}
+      host: 127.0.0.1
+      port: 6379
+      password: ""
+      database: 0
       timeout: 5s
       lettuce:
         pool:
@@ -51,9 +52,9 @@ spring:
 
 # ======================== Elasticsearch 7 ========================
 elasticsearch:
-  uris: ${ES_URIS:http://127.0.0.1:9200}
-  username: ${ES_USERNAME:}
-  password: ${ES_PASSWORD:}
+  uris: http://127.0.0.1:9200
+  username: ""
+  password: ""
   index:
     # ES 索引：dim=1024（bge-m3），检索 similarity=cosine
     material_chunk: writing_material_chunk
@@ -72,17 +73,19 @@ server:
 # ======================== 模型服务 ========================
 model:
   llm:
-    provider: ${LLM_PROVIDER:dashscope}
-    api_key: ${DASHSCOPE_API_KEY:}
-    base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
-    model: ${LLM_MODEL:qwen-max}
+    provider: dashscope
+    # DashScope API key 走环境变量（H4 全局不变量③），禁止明文入版本库；启动期缺则报错
+    api_key: ${DASHSCOPE_API_KEY}
+    base-url: https://dashscope.aliyuncs.com
+    model: qwen-max
     timeout-seconds: 60
   embedding:
-    provider: ${EMBEDDING_PROVIDER:bge}
-    model-path: ${BGE_MODEL_PATH:./models/bge-m3}
-    model: ${EMBEDDING_MODEL:bge-m3}
+    provider: bge
+    # BGE 模型本地路径走环境变量（H4 全局不变量③），禁止明文入版本库；启动期缺则报错
+    model-path: ${BGE_MODEL_PATH}
+    model: bge-m3
     dim: 1024
-    load-on-start: ${BGE_LOAD_ON_START:true}
+    load-on-start: true
 
 # ======================== 记忆 ========================
 memory:
@@ -133,4 +136,4 @@ logging:
     com.scriptagent: DEBUG
     org.hibernate.SQL: WARN
   pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%ex"
