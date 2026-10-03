@@ -3,6 +3,8 @@ package com.scriptagent.writing.api.advice;
 
 import com.scriptagent.writing.api.dto.ApiResponse;
 import com.scriptagent.writing.api.dto.ResultCode;
+import com.scriptagent.writing.common.exception.BusinessException;
+import com.scriptagent.writing.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -71,6 +73,20 @@ public class GlobalExceptionHandler {
     log.warn("资源不存在 path={} msg={}", request.getRequestURI(), ex.getMessage());
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(ApiResponse.error(ResultCode.NOT_FOUND, ex.getMessage()));
+  }
+
+  /** 业务错误（BusinessException + ErrorCode）→ 按语义映射；LOGIN_FAILED 属认证失败 → 401 */
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleBusiness(
+      BusinessException ex, HttpServletRequest request) {
+    if (ex.getErrorCode() == ErrorCode.LOGIN_FAILED) {
+      log.warn("登录失败 path={}", request.getRequestURI());
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.error(ex.getCode(), ex.getMessage()));
+    }
+    log.warn("业务错误 path={} code={} msg={}", request.getRequestURI(), ex.getCode(), ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ApiResponse.error(ex.getCode(), ex.getMessage()));
   }
 
   /** 兜底异常 → 500 */
