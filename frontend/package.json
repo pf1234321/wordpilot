@@ -1,0 +1,29 @@
+{
+  "name": "scriptagent-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ScriptAgent 智稿引擎前端工作台（mock 支线）——Vue3 + Vite + Element Plus + Pinia + Axios + SSE",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.7",
+    "element-plus": "^2.8.4",
+    "pinia": "^2.2.4",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@pinia/testing": "^0.1.5",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^25.0.1",
+    "vite": "^5.4.9",
+    "vitest": "^2.1.4"
+  }
+}
