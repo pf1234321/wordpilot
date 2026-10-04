@@ -17,23 +17,23 @@
               v-model="dialogInput"
               type="textarea"
               :rows="3"
-              placeholder="输入一句话，AI 帮你展开成文（mock 生成）"
+              placeholder="输入一句话，AI 帮你展开成文"
             />
             <el-button type="primary" class="gen-btn" :loading="dialogStreaming" @click="runDialog">
               开始生成
             </el-button>
-            <SseStream ref="dialogStreamRef" />
+            <pre v-if="dialogContent" class="sse-output">{{ dialogContent }}</pre>
           </div>
         </el-tab-pane>
 
         <!-- Tab2 素材仿写 -->
         <el-tab-pane label="素材仿写" name="rag">
           <div class="tab-body">
-            <el-select v-model="ragMaterialId" placeholder="选择参考素材" class="full">
+            <el-select v-model="ragMaterialId" placeholder="选择参考素材（RAG 自动检索）" class="full">
               <el-option
                 v-for="m in materials"
                 :key="m.id"
-                :label="m.name"
+                :label="m.fileName"
                 :value="m.id"
               />
             </el-select>
@@ -46,7 +46,7 @@
             <el-button type="primary" class="gen-btn" :loading="ragStreaming" @click="runRag">
               开始仿写
             </el-button>
-            <SseStream ref="ragStreamRef" />
+            <pre v-if="ragContent" class="sse-output">{{ ragContent }}</pre>
           </div>
         </el-tab-pane>
 
@@ -59,7 +59,7 @@
                 :key="t.id"
                 :label="t.name"
                 :value="t.id"
-                :disabled="!t.enabled"
+                :disabled="t.status !== 'enabled'"
               />
             </el-select>
 
@@ -69,14 +69,14 @@
                 :key="v.key"
                 :label="v.label || v.key"
               >
-                <el-input v-model="templateValues[v.key]" :placeholder="v.hint || v.key" />
+                <el-input v-model="templateValues[v.key]" :placeholder="v.placeholder || v.key" />
               </el-form-item>
             </el-form>
 
             <el-button type="primary" class="gen-btn" :loading="templateStreaming" @click="runTemplate">
               开始生成
             </el-button>
-            <SseStream ref="templateStreamRef" />
+            <pre v-if="templateContent" class="sse-output">{{ templateContent }}</pre>
           </div>
         </el-tab-pane>
 
@@ -101,11 +101,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import { useWorkbenchStore } from '../stores/workbench'
-import SseStream from '../components/SseStream.vue'
 import MaterialManage from './MaterialManage.vue'
 import TemplateManage from './TemplateManage.vue'
 import ArticleHistory from './ArticleHistory.vue'
-import { mockGenerate, mockListMaterials, mockListTemplates } from '../mock/mockApi'
+import { listMaterials, listTemplates, generate } from '../api/writingApi'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -124,7 +123,6 @@ const dialogInput = computed({
 })
 const dialogContent = computed(() => wb.dialogContent)
 const dialogStreaming = computed(() => wb.dialogStreaming)
-const dialogStreamRef = ref()
 
 const ragMaterialId = computed({
   get: () => wb.ragMaterialId,
@@ -136,7 +134,6 @@ const ragInput = computed({
 })
 const ragContent = computed(() => wb.ragContent)
 const ragStreaming = computed(() => wb.ragStreaming)
-const ragStreamRef = ref()
 
 const templateId = computed({
   get: () => wb.templateId,
@@ -145,7 +142,6 @@ const templateId = computed({
 const templateValues = computed(() => wb.templateValues)
 const templateContent = computed(() => wb.templateContent)
 const templateStreaming = computed(() => wb.templateStreaming)
-const templateStreamRef = ref()
 
 const materials = ref([])
 const templates = ref([])
@@ -153,8 +149,16 @@ const currentTemplate = computed(() => templates.value.find((t) => t.id === wb.t
 
 onMounted(async () => {
   userStore.restore()
-  materials.value = await mockListMaterials()
-  templates.value = await mockListTemplates()
+  try {
+    materials.value = await listMaterials()
+  } catch (e) {
+    ElMessage.error('素材加载失败')
+  }
+  try {
+    templates.value = await listTemplates()
+  } catch (e) {
+    ElMessage.error('模板加载失败')
+  }
 })
 
 function handleLogout() {
@@ -170,66 +174,60 @@ function loadTemplateVars(id) {
   }
 }
 
-async function runDialog() {
+function runDialog() {
   if (!dialogInput.value.trim()) {
     ElMessage.warning('请输入内容')
     return
   }
   wb.resetTab('dialog')
-  const { stream } = await mockGenerate({ mode: 'dialog', prompt: dialogInput.value })
   wb.dialogStreaming = true
+  const { stream } = generate('dialog', { content: dialogInput.value })
   stream(
     (chunk) => (wb.dialogContent += chunk),
+    () => (wb.dialogStreaming = false),
     () => (wb.dialogStreaming = false)
   )
 }
 
-async function runRag() {
-  const material = materials.value.find((m) => m.id === wb.ragMaterialId)
-  if (!material) {
-    ElMessage.warning('请选择参考素材')
+function runRag() {
+  if (!ragInput.value.trim()) {
+    ElMessage.warning('请输入仿写需求')
     return
   }
   wb.resetTab('rag')
-  const { stream } = await mockGenerate({
-    mode: 'rag',
-    prompt: ragInput.value || '按素材风格仿写',
-    materialName: material.name
-  })
   wb.ragStreaming = true
+  const { stream } = generate('rag', { requirement: ragInput.value })
   stream(
     (chunk) => (wb.ragContent += chunk),
+    () => (wb.ragStreaming = false),
     () => (wb.ragStreaming = false)
   )
 }
 
-async function runTemplate() {
+function runTemplate() {
   const t = currentTemplate.value
   if (!t) {
     ElMessage.warning('请选择模板')
     return
   }
+  const params = {}
+  t.variables.forEach((v) => (params[v.key] = wb.templateValues[v.key] || ''))
   wb.resetTab('template')
-  const vars = t.variables.map((v) => wb.templateValues[v.key])
-  const { stream } = await mockGenerate({
-    mode: 'template',
-    prompt: t.name,
-    templateName: t.name,
-    variables: vars
-  })
   wb.templateStreaming = true
+  const { stream } = generate('template', { templateId: t.id, params })
   stream(
     (chunk) => (wb.templateContent += chunk),
+    () => (wb.templateStreaming = false),
     () => (wb.templateStreaming = false)
   )
 }
 
 // 稿件历史"重新编辑"：回填对应 Tab 并切换过去
 function reEditArticle(article) {
-  if (article.mode === 'dialog') {
+  if (article.writeType === 'dialog') {
     wb.dialogInput = article.title
     wb.activeTab = 'dialog'
-  } else if (article.mode === 'rag') {
+  } else if (article.writeType === 'rag') {
     wb.ragInput = article.title
     wb.activeTab = 'rag'
   } else {
@@ -279,5 +277,16 @@ function reEditArticle(article) {
 }
 .tpl-form {
   margin-top: 4px;
+}
+.sse-output {
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 12px;
+  min-height: 120px;
+  background: #f8f9fb;
+  margin: 0;
+  line-height: 1.7;
 }
 </style>

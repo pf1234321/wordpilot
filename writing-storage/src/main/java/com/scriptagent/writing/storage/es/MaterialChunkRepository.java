@@ -14,6 +14,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -84,6 +85,8 @@ public class MaterialChunkRepository {
       return;
     }
     BulkRequest bulk = new BulkRequest();
+    // 写后读一致：切片入库立即 refresh，保证上传后立即 rag 检索（向量相似度）能命中（全链路联调修复）
+    bulk.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     for (MaterialChunk chunk : chunks) {
       chunk.setUserId(userId);
       chunk.setMaterialId(materialId);

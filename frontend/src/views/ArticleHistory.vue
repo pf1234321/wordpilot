@@ -2,12 +2,14 @@
   <div class="manage">
     <el-table :data="articles" border stripe class="table">
       <el-table-column prop="title" label="标题" min-width="180" />
-      <el-table-column prop="mode" label="模式" width="120">
+      <el-table-column label="模式" width="120">
         <template #default="{ row }">
-          <el-tag :type="modeTag(row.mode)">{{ modeLabel(row.mode) }}</el-tag>
+          <el-tag :type="modeTag(row.writeType)">{{ modeLabel(row.writeType) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="时间" width="180" />
+      <el-table-column label="时间" width="180">
+        <template #default="{ row }">{{ timeLabel(row.createTime) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
           <el-button link type="primary" @click="view(row)">查看</el-button>
@@ -27,7 +29,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { mockListArticles, mockDeleteArticle } from '../mock/mockApi'
+import { listArticles, previewArticle, exportArticle, deleteArticle } from '../api/writingApi'
 
 const emit = defineEmits(['re-edit'])
 
@@ -38,7 +40,7 @@ const current = ref(null)
 onMounted(load)
 
 async function load() {
-  articles.value = await mockListArticles()
+  articles.value = await listArticles()
 }
 
 function modeLabel(mode) {
@@ -47,9 +49,13 @@ function modeLabel(mode) {
 function modeTag(mode) {
   return { dialog: 'primary', rag: 'success', template: 'warning' }[mode] || 'info'
 }
+function timeLabel(t) {
+  return t ? String(t).replace('T', ' ').slice(0, 19) : '-'
+}
 
-function view(row) {
-  current.value = row
+async function view(row) {
+  const detail = await previewArticle(row.id)
+  current.value = { ...row, content: detail?.articleContent || '' }
   viewVisible.value = true
 }
 
@@ -58,21 +64,21 @@ function reEdit(row) {
   ElMessage.success('已回填到对应工作台 Tab')
 }
 
-// 导出：mock 模式下载 .txt 文本（真实后端联调时改为导出 Word /api/article/{id}/export）
-function exportWord(row) {
-  const blob = new Blob([row.content || ''], { type: 'text/plain;charset=utf-8' })
+// 导出：真实后端 POI 生成 docx，下载 /api/article/{id}/export
+async function exportWord(row) {
+  const blob = await exportArticle(row.id)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${row.title || '稿件'}.txt`
+  a.download = `${row.title || '稿件'}.docx`
   a.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('已导出')
+  ElMessage.success('已导出 Word')
 }
 
 async function remove(row) {
   await ElMessageBox.confirm(`确认删除稿件「${row.title}」？`, '提示', { type: 'warning' })
-  await mockDeleteArticle(row.id)
+  await deleteArticle(row.id)
   ElMessage.success('已删除')
   load()
 }

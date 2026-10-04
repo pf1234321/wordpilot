@@ -99,21 +99,21 @@ class WritingAgentTest {
 
     WritingAgent agent = newAgent("dialog", neverCompress(), null);
     assertEquals("推文正文", agent.run(USER_ID, SESSION, "写推文", output));
-    verify(esRetrieveTool, never()).execute(anyString());
+    verify(esRetrieveTool, never()).execute(eq(USER_ID), anyString());
   }
 
   @Test
   @DisplayName("rag 模式：先经 ESRetrieveTool 取参考素材，再经模型服务产出")
   void run_rag_retrievesReferenceThenProduces() {
     stubContext(false);
-    when(esRetrieveTool.execute("按素材仿写")).thenReturn("参考切片一\n参考切片二");
+    when(esRetrieveTool.execute(USER_ID, "按素材仿写")).thenReturn("参考切片一\n参考切片二");
     when(promptManager.assembleMessages(eq("rag"), any(), any(), eq("按素材仿写"), any()))
         .thenReturn(List.of(new Message("system", "s"), new Message("user", "按素材仿写")));
     when(modelService.chat(any())).thenReturn("仿写正文");
 
     WritingAgent agent = newAgent("rag", neverCompress(), esRetrieveTool);
     assertEquals("仿写正文", agent.run(USER_ID, SESSION, "按素材仿写", output));
-    verify(esRetrieveTool).execute("按素材仿写");
+    verify(esRetrieveTool).execute(USER_ID, "按素材仿写");
   }
 
   @Test

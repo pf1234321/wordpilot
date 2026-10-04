@@ -40,7 +40,15 @@ public class ESRetrieveTool implements AgentTool {
 
   @Override
   public String execute(String query) {
-    Long userId = UserContext.require();
+    // AgentTool 通用入口：user_id 仍从请求线程 ThreadLocal UserContext 取（H4 不变量①）
+    return execute(UserContext.require(), query);
+  }
+
+  /**
+   * 带显式 userId 的检索入口：SSE 在独立线程执行，请求线程的 ThreadLocal UserContext 不跨线程， 故由编排层把已注入的 userId
+   * 显式传下（来源仍是登录鉴权链路，禁止前端参数取）。 query 向量化后按 user_id + cosine 召回 TopN 切片.
+   */
+  public String execute(Long userId, String query) {
     float[] vector = modelService.embed(query);
     List<String> hits;
     try {

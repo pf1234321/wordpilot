@@ -11,7 +11,7 @@
       <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
       <div class="el-upload__text">拖拽文件到此处，或<em>点击上传</em>素材</div>
       <template #tip>
-        <div class="el-upload__tip">仅当前用户可见（mock 隔离）。支持 txt/md/docx/pdf</div>
+        <div class="el-upload__tip">仅当前用户可见。支持 txt/md/docx/pdf，上传后自动切片向量化</div>
       </template>
     </el-upload>
 
@@ -20,9 +20,12 @@
     </el-button>
 
     <el-table :data="materials" border stripe class="table">
-      <el-table-column prop="name" label="素材名" min-width="180" />
-      <el-table-column prop="type" label="类型" width="90" />
-      <el-table-column prop="size" label="大小" width="100" />
+      <el-table-column prop="fileName" label="素材名" min-width="180" />
+      <el-table-column prop="fileType" label="类型" width="90" />
+      <el-table-column label="大小" width="110">
+        <template #default="{ row }">{{ sizeLabel(row.fileSize) }}</template>
+      </el-table-column>
+      <el-table-column prop="chunkCount" label="切片数" width="90" />
       <el-table-column label="操作" width="160">
         <template #default="{ row }">
           <el-button link type="primary" @click="preview(row)">预览</el-button>
@@ -41,7 +44,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
-import { mockListMaterials, mockUploadMaterial, mockPreviewMaterial, mockDeleteMaterial } from '../mock/mockApi'
+import { listMaterials, uploadMaterial, previewMaterial, deleteMaterial } from '../api/writingApi'
 
 const materials = ref([])
 const pendingFile = ref(null)
@@ -51,37 +54,35 @@ const previewContent = ref('')
 onMounted(load)
 
 async function load() {
-  materials.value = await mockListMaterials()
+  materials.value = await listMaterials()
 }
 
 function onFileChange(file) {
   pendingFile.value = file
 }
 
+function sizeLabel(bytes) {
+  if (!bytes && bytes !== 0) return '-'
+  return `${(bytes / 1024).toFixed(1)} KB`
+}
+
 async function doUpload() {
   if (!pendingFile.value) return
-  const raw = pendingFile.value.raw
-  const content = await raw.text()
-  await mockUploadMaterial({
-    name: raw.name,
-    type: raw.name.split('.').pop() || 'txt',
-    size: `${(raw.size / 1024).toFixed(1)} KB`,
-    content
-  })
+  await uploadMaterial(pendingFile.value.raw)
   pendingFile.value = null
   ElMessage.success('上传成功')
   load()
 }
 
 async function preview(row) {
-  const m = await mockPreviewMaterial(row.id)
-  previewContent.value = m?.content || '（无内容）'
+  const m = await previewMaterial(row.id)
+  previewContent.value = m?.contentText || '（无内容）'
   previewVisible.value = true
 }
 
 async function remove(row) {
-  await ElMessageBox.confirm(`确认删除素材「${row.name}」？`, '提示', { type: 'warning' })
-  await mockDeleteMaterial(row.id)
+  await ElMessageBox.confirm(`确认删除素材「${row.fileName}」？`, '提示', { type: 'warning' })
+  await deleteMaterial(row.id)
   ElMessage.success('已删除')
   load()
 }

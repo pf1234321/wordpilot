@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -88,6 +89,8 @@ public class TemplateRepository {
     doc.setUpdateTime(now);
     IndexRequest request =
         new IndexRequest(INDEX_TEMPLATE).id(doc.getId()).source(toSource(doc), XContentType.JSON);
+    // 写后读一致：立即 refresh，避免近实时延迟导致"创建后马上查不到"（全链路联调修复）
+    request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     client.index(request, RequestOptions.DEFAULT);
     return doc.getId();
   }
@@ -137,6 +140,8 @@ public class TemplateRepository {
                 QueryBuilders.boolQuery()
                     .filter(QueryBuilders.termQuery("_id", id))
                     .filter(QueryBuilders.termQuery("user_id", userId)));
+    // 删除立即 refresh，保证后续查询（含越权探测判不存在）读到的是一致的
+    request.setRefresh(true);
     BulkByScrollResponse response = client.deleteByQuery(request, RequestOptions.DEFAULT);
     return response.getDeleted() > 0;
   }
@@ -259,6 +264,8 @@ public class TemplateRepository {
             "ctx._source.status = params.newStatus; ctx._source.update_time = params.now;",
             params);
     request.setScript(script);
+    // 状态翻转立即 refresh，保证后续查询读到一致状态
+    request.setRefresh(true);
     BulkByScrollResponse response = client.updateByQuery(request, RequestOptions.DEFAULT);
     return response.getUpdated() > 0;
   }

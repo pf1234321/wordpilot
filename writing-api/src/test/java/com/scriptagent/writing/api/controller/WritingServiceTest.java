@@ -8,6 +8,7 @@ import com.scriptagent.writing.api.dto.DialogRequest;
 import com.scriptagent.writing.api.dto.RagRequest;
 import com.scriptagent.writing.api.dto.TemplateRequest;
 import com.scriptagent.writing.api.sse.SseStreamingService;
+import com.scriptagent.writing.business.ArticleService;
 import com.scriptagent.writing.business.TemplateService;
 import com.scriptagent.writing.common.UserContext;
 import com.scriptagent.writing.common.exception.BusinessException;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -48,8 +50,9 @@ class WritingServiceTest {
   private final SseStreamingService sse = mock(SseStreamingService.class);
   private final TemplateRepository templateRepository = mock(TemplateRepository.class);
   private final TemplateService templateService = mock(TemplateService.class);
+  private final ArticleService articleService = mock(ArticleService.class);
   private final WritingService service =
-      new WritingService(agentFactory, sse, templateRepository, templateService);
+      new WritingService(agentFactory, sse, templateRepository, templateService, articleService);
 
   @BeforeEach
   void setUp() {
@@ -162,5 +165,20 @@ class WritingServiceTest {
 
     // 工厂拒绝被转发到 SSE onError（不静默吞错、不降级为任意模式）
     verify(output).onError(any(Throwable.class));
+  }
+
+  @Test
+  @DisplayName("关键回归：写作生成完成后统一落稿到稿件历史（FR-005，前端稿件历史数据源）")
+  void route_dialog_persistsArticleOnCompletion() throws Exception {
+    WritingAgent agent = mock(WritingAgent.class);
+    when(agentFactory.create(eq("dialog"), eq(USER_A), anyString())).thenReturn(agent);
+    // 断线缓存已有完整生成内容 → 生成完成后落稿
+    when(sse.readCache(eq(USER_A), anyString())).thenReturn("生成内容ABC");
+
+    service.dialog(new DialogRequest("帮我写一篇新品推文", "sess1"));
+
+    // 落稿：user_id + write_type + 标题(指令前40字) + 完整内容；dialog 无素材/模板关联
+    verify(articleService)
+        .save(eq(USER_A), eq("dialog"), eq("帮我写一篇新品推文"), eq("生成内容ABC"), isNull(), isNull());
   }
 }

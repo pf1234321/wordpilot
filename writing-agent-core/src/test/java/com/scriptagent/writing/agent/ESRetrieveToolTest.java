@@ -67,4 +67,15 @@ class ESRetrieveToolTest {
     when(materialChunkRepository.search(eq(USER_ID), any(), eq(5))).thenReturn(List.of());
     assertEquals("", tool.execute("查新品推文"));
   }
+
+  @Test
+  @DisplayName("带显式 userId 的入口：SSE 异步线程无 ThreadLocal 也能按传入 userId 检索")
+  void execute_withExplicitUserId_usesPassedUserId() throws Exception {
+    UserContext.clear(); // 模拟 SSE 独立线程：请求线程的 ThreadLocal 不跨线程
+    float[] vec = new float[] {0.3f, 0.4f};
+    when(modelService.embed("查新品推文")).thenReturn(vec);
+    when(materialChunkRepository.search(USER_ID, vec, 5)).thenReturn(List.of("切片A"));
+    assertEquals("切片A", tool.execute(USER_ID, "查新品推文"));
+    verify(materialChunkRepository).search(USER_ID, vec, 5);
+  }
 }

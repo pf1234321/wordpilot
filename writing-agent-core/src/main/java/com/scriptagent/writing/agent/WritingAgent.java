@@ -58,7 +58,8 @@ public class WritingAgent {
     }
     List<String> referenceMaterials = List.of();
     if (esRetrieveTool != null) {
-      String refs = esRetrieveTool.execute(userMessage);
+      // SSE 独立线程无 ThreadLocal UserContext，显式传入 userId（来源登录鉴权链路）
+      String refs = esRetrieveTool.execute(userId, userMessage);
       if (refs != null && !refs.trim().isEmpty()) {
         referenceMaterials = List.of(refs);
       }

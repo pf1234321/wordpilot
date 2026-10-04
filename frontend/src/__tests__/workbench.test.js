@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import Workbench from '../views/Workbench.vue'
@@ -6,6 +6,13 @@ import { useUserStore } from '../stores/user'
 import { useWorkbenchStore } from '../stores/workbench'
 import { resetDb, addMaterial, addTemplate } from '../mock/db'
 import { mockGenerate } from '../mock/mockApi'
+
+// 全链路：Workbench 经 writingApi 加载素材/模板（测试 mock 该层为空），生成逻辑用 mockGenerate 手动驱动验证 store 累加
+vi.mock('../api/writingApi', () => ({
+  listMaterials: vi.fn(async () => []),
+  listTemplates: vi.fn(async () => []),
+  generate: vi.fn(() => ({ stream: () => {}, close: () => {} }))
+}))
 
 // 三大 Tab 冒烟：对话/仿写/模板各走通一次，SSE 增量渲染
 // stub 掉 Element Plus 与子组件，聚焦核心链路（Tab 切换 + mock 生成 + store 状态）

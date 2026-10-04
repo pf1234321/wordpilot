@@ -8,6 +8,7 @@ import com.scriptagent.writing.api.dto.DialogRequest;
 import com.scriptagent.writing.api.dto.RagRequest;
 import com.scriptagent.writing.api.dto.TemplateRequest;
 import com.scriptagent.writing.api.sse.SseStreamingService;
+import com.scriptagent.writing.business.ArticleService;
 import com.scriptagent.writing.business.TemplateService;
 import com.scriptagent.writing.common.UserContext;
 import com.scriptagent.writing.common.exception.BusinessException;
@@ -39,16 +40,19 @@ public class WritingService {
   private final SseStreamingService sse;
   private final TemplateRepository templateRepository;
   private final TemplateService templateService;
+  private final ArticleService articleService;
 
   public WritingService(
       AgentFactory agentFactory,
       SseStreamingService sse,
       TemplateRepository templateRepository,
-      TemplateService templateService) {
+      TemplateService templateService,
+      ArticleService articleService) {
     this.agentFactory = agentFactory;
     this.sse = sse;
     this.templateRepository = templateRepository;
     this.templateService = templateService;
+    this.articleService = articleService;
   }
 
   /** 一句话多轮对话写作：路由到对话 Agent（无检索工具），user_id 取自 UserContext. */
@@ -83,17 +87,31 @@ public class WritingService {
   }
 
   /**
-   * 执行一次写作路由 + 推理；生成过程任何异常（含工厂未知模式拒绝）转发到 {@link StreamOutput#onError}，让 SSE 以错误帧结束， 不静默吞错、不把
-   * emitter 悬空（路由不静默降级，FR-002）.
+   * 执行一次写作路由 + 推理；生成完成（agent.run 返回）后把累积内容统一落稿到稿件历史（FR-005）， 使前端"稿件历史"能读到真实生成结果。任何异常（含工厂未知模式拒绝） 转发到
+   * {@link StreamOutput#onError}，让 SSE 以错误帧结束，不静默吞错、不把 emitter 悬空（路由不静默降级，FR-002）.
    */
   private void runAgent(
       Long userId, String sessionId, String mode, String message, StreamOutput output) {
     try {
       WritingAgent agent = agentFactory.create(mode, userId, sessionId);
       agent.run(userId, sessionId, message, output);
+      // 三类写作统一落稿：从断线缓存读回完整生成内容（SSE 逐段写入 redis sse:cache）
+      String content = sse.readCache(userId, sessionId);
+      if (content != null && !content.isBlank()) {
+        articleService.save(userId, mode, titleOf(message), content, null, null);
+      }
     } catch (RuntimeException e) {
       output.onError(e);
     }
+  }
+
+  /** 稿件标题：取写作指令前 40 字（去换行），空输入给兜底标题. */
+  private static String titleOf(String message) {
+    if (message == null || message.isBlank()) {
+      return "未命名稿件";
+    }
+    String oneLine = message.replace('\n', ' ').trim();
+    return oneLine.length() > 40 ? oneLine.substring(0, 40) : oneLine;
   }
 
   /** 读模板并校验启停：缺失/越权统一按不存在处理；ES 受检异常转业务异常（触发回滚/统一响应）. */

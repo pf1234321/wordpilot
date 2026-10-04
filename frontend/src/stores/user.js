@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { mockLogin } from '../mock/mockApi'
+import { login as apiLogin } from '../api/writingApi'
 
-// 用户状态：token、登录/登出
+// 用户状态：token、登录/登出（全链路：登录走真实 /api/auth/login）
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const nickname = ref('')
@@ -10,7 +10,7 @@ export const useUserStore = defineStore('user', () => {
   const isAuthenticated = computed(() => !!token.value)
 
   async function login({ username, password }) {
-    const { token: tk, nickname: nick } = await mockLogin({ username, password })
+    const { token: tk, nickname: nick } = await apiLogin({ username, password })
     token.value = tk
     nickname.value = nick
     localStorage.setItem('token', tk)
@@ -27,7 +27,6 @@ export const useUserStore = defineStore('user', () => {
     const tk = localStorage.getItem('token')
     if (tk) {
       token.value = tk
-      nickname.value = tk.replace('mock-token-', '')
     }
   }
 

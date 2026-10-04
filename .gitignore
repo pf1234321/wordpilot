@@ -62,3 +62,6 @@ pmd-report.xml
 checkstyle-result.html
 # 本地启动凭证，不入版本库（H4③）
 .env
+
+# 本地运行状态（PID/日志）
+.run/

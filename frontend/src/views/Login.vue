@@ -6,7 +6,7 @@
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="0" @submit.prevent="handleLogin">
         <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="账号（demo / 123456）" size="large" :prefix-icon="User" />
+          <el-input v-model="form.username" placeholder="账号" size="large" :prefix-icon="User" />
         </el-form-item>
         <el-form-item prop="password">
           <el-input
@@ -25,7 +25,7 @@
           </el-button>
         </el-form-item>
         <div v-if="error" class="login-error">{{ error }}</div>
-        <div class="login-hint">mock 模式：demo / 123456 或 alice / 123456</div>
+        <div class="login-hint">全链路模式：账号密码经真实后端 /api/auth/login 校验</div>
       </el-form>
     </el-card>
   </div>
