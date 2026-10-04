@@ -60,3 +60,5 @@ spotbugsXml.xml
 pmd-report.html
 pmd-report.xml
 checkstyle-result.html
+# 本地启动凭证，不入版本库（H4③）
+.env
