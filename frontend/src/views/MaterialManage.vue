@@ -1,6 +1,7 @@
 <template>
   <div class="manage">
     <el-upload
+      ref="uploadRef"
       class="upload"
       drag
       :auto-upload="false"
@@ -48,6 +49,7 @@ import { listMaterials, uploadMaterial, previewMaterial, deleteMaterial } from '
 
 const materials = ref([])
 const pendingFile = ref(null)
+const uploadRef = ref(null)
 const previewVisible = ref(false)
 const previewContent = ref('')
 
@@ -69,6 +71,8 @@ function sizeLabel(bytes) {
 async function doUpload() {
   if (!pendingFile.value) return
   await uploadMaterial(pendingFile.value.raw)
+  // 上传成功后必须清空 el-upload 内部 fileList，否则 :limit="1" 会拦截第二次选文件(on-change不再触发)
+  uploadRef.value?.clearFiles()
   pendingFile.value = null
   ElMessage.success('上传成功')
   load()
